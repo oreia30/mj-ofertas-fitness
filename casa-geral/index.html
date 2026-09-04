@@ -238,5 +238,50 @@ src="https://www.facebook.com/tr?id=4614565535535416&ev=PageView&noscript=1"
     }
   });
 </script>
+<script>
+(function () {
+  function getOrCreate(key, storage) {
+    try {
+      var v = storage.getItem(key);
+      if (!v) {
+        v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).slice(2));
+        storage.setItem(key, v);
+      }
+      return v;
+    } catch (e) {
+      return Date.now() + '-' + Math.random().toString(36).slice(2);
+    }
+  }
+  // vid/sid gerados aqui mesmo (localStorage/sessionStorage do próprio
+  // mjofertas.site) em vez de depender de cookie do painel — navegadores
+  // bloqueiam cookie de terceiros, isso não.
+  var vid = getOrCreate('mjo_vid', window.localStorage);
+  var sid = getOrCreate('mjo_sid', window.sessionStorage);
+
+  // Pixel de visualização — mesma ideia do Pixel da Meta, só que pro painel.
+  var loc = new URLSearchParams(window.location.search);
+  var qs = new URLSearchParams();
+  qs.set('slug', 'casa-geral');
+  qs.set('vid', vid);
+  qs.set('sid', sid);
+  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function (k) {
+    var v = loc.get(k);
+    if (v) qs.set(k, v);
+  });
+  var img = new Image();
+  img.src = 'https://painel.mjofertas.site/api/track/view?' + qs.toString();
+
+  // Anexa o mesmo vid/sid no link de rastreio do CTA, pra visita e clique
+  // baterem como o mesmo visitante nas estatísticas do painel.
+  document.querySelectorAll('a.btn[href*="painel.mjofertas.site/r/"]').forEach(function (a) {
+    try {
+      var url = new URL(a.href);
+      url.searchParams.set('vid', vid);
+      url.searchParams.set('sid', sid);
+      a.href = url.toString();
+    } catch (e) {}
+  });
+})();
+</script>
 </body>
 </html>
